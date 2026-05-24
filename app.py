@@ -1,20 +1,66 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="NRFI Dashboard", layout="wide")
+st.set_page_config(
+    page_title="NRFI Predictor",
+    layout="wide"
+)
 
-st.title("⚾ NRFI Predictor (B2 Model)")
+st.title("⚾ Advanced NRFI Model (B3-B)")
 
-df = pd.read_csv("data/predictions.csv")
+try:
+    df = pd.read_csv("data/predictions.csv")
+except:
+    st.error("No predictions found.")
+    st.stop()
 
-st.subheader("All Games")
-st.dataframe(df, use_container_width=True)
+# ----------------------------
+# MAIN TABLE
+# ----------------------------
 
-st.subheader("🔥 Best Plays")
+st.subheader("All Matchups")
 
-best = df[df["avg_nrfi"] > df["avg_nrfi"].quantile(0.7)]
+st.dataframe(
+    df[
+        [
+            "away_team",
+            "home_team",
+            "away_pitcher",
+            "home_pitcher",
+            "avg_nrfi",
+            "edge_tier"
+        ]
+    ],
+    use_container_width=True
+)
+
+# ----------------------------
+# BEST PLAYS
+# ----------------------------
+
+st.subheader("🔥 Best NRFI Plays")
+
+best = df[df["edge_tier"] != "PASS"]
 
 if len(best) > 0:
-    st.dataframe(best, use_container_width=True)
+    st.dataframe(
+        best[
+            [
+                "away_team",
+                "home_team",
+                "avg_nrfi",
+                "edge_tier"
+            ]
+        ],
+        use_container_width=True
+    )
 else:
-    st.write("No strong NRFI edges today")
+    st.write("No strong edges today.")
+
+# ----------------------------
+# TIMESTAMP
+# ----------------------------
+
+st.caption(
+    f"Last Updated: {df['timestamp'].iloc[0]}"
+)
