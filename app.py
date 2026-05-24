@@ -3,18 +3,11 @@ import pandas as pd
 
 st.set_page_config(page_title="NRFI Dashboard", layout="wide")
 
-st.title("⚾ NRFI Predictor Dashboard")
+st.title("⚾ NRFI Predictor (B2 Model)")
 
-file_path = "data/predictions.csv"
-
-try:
-    df = pd.read_csv(file_path)
-except:
-    st.write("No data yet - run pipeline first")
-    st.stop()
+df = pd.read_csv("data/predictions.csv")
 
 st.subheader("All Games")
-
 st.dataframe(df, use_container_width=True)
 
 st.subheader("🔥 Best Plays")
