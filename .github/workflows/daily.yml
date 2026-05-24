@@ -1,10 +1,10 @@
-name: NRFI Daily Run
+name: DEBUG NRFI RUN
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  debug:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,6 +14,18 @@ jobs:
         with:
           python-version: "3.10"
 
-      - run: pip install pandas numpy
+      - run: |
+          echo "===== LISTING FILES ====="
+          ls -R
 
-      - run: python src/predictor.py
+      - run: |
+          echo "===== RUNNING PYTHON FILES ====="
+          python --version
+
+      - run: |
+          echo "===== SEARCHING FOR PREDICT FILES ====="
+          find . -name "*.py"
+
+      - run: |
+          echo "===== EXECUTING CURRENT SCRIPT ====="
+          python src/predictor.py || python src/predictor_v2.py || python src/predict_all.py
