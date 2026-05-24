@@ -3,6 +3,8 @@ import numpy as np
 import os
 from datetime import datetime
 
+print("RUNNING NEW B3-B FILE")
+
 def run():
 
     os.makedirs("data", exist_ok=True)
