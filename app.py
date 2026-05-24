@@ -6,6 +6,8 @@ st.set_page_config(page_title="NRFI Model", layout="wide")
 
 st.title("🔥 MLB NRFI Dashboard")
 
+st.autorefresh(interval=300000)  # refresh every 5 minutes
+
 file_path = "data/predictions.csv"
 
 # ---------------- SAFE LOAD ----------------
