@@ -1,42 +1,43 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from pybaseball import pitching_stats
+from mlbstatsapi import MLBStatsAPI
 
-st.title("⚾ NRFI Predictor (Live MLB Data)")
+st.title("⚾ NRFI Predictor (Stable MLB API)")
 
-# -----------------------------
-# LOAD REAL PITCHER DATA
-# -----------------------------
-@st.cache_data(ttl=86400)
-def get_pitchers():
-    df = pitching_stats(2025)
-    return df
+api = MLBStatsAPI()
 
-df = get_pitchers()
+# ----------------------------
+# GET TEAM PITCHING STATS
+# ----------------------------
+teams = api.get_teams()
 
-# -----------------------------
-# CLEAN + STANDARDIZE
-# -----------------------------
-df = df[[
-    "Name",
-    "Team",
-    "K/9",
-    "BB/9",
-    "HR/9",
-    "WHIP"
-]].dropna()
+rows = []
 
-df.columns = ["pitcher", "team", "k9", "bb9", "hr9", "whip"]
+for team in teams[:10]:  # limit for speed/stability
+    try:
+        stats = api.get_team_stats(team.id, "pitching")
 
-# -----------------------------
-# SIMPLE NRFI SCORE MODEL
-# -----------------------------
+        rows.append({
+            "team": team.name,
+            "whip": stats.get("whip", 1.30),
+            "k9": stats.get("strikeoutsPer9Inn", 8.5),
+            "bb9": stats.get("walksPer9Inn", 3.2),
+            "hr9": stats.get("homeRunsPer9", 1.1),
+        })
+    except:
+        continue
+
+df = pd.DataFrame(rows)
+
+# ----------------------------
+# NRFI MODEL
+# ----------------------------
 df["nrfi_score"] = (
-    (df["k9"] * 0.35) -
-    (df["bb9"] * 0.25) -
-    (df["hr9"] * 0.35) -
-    (df["whip"] * 0.10)
+    df["k9"] * 0.35
+    - df["bb9"] * 0.25
+    - df["hr9"] * 0.35
+    - df["whip"] * 0.10
 )
 
 df["edge_tier"] = df["nrfi_score"].apply(
@@ -46,13 +47,13 @@ df["edge_tier"] = df["nrfi_score"].apply(
 
 df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-# -----------------------------
+# ----------------------------
 # DISPLAY
-# -----------------------------
-st.subheader("All Pitchers")
+# ----------------------------
+st.subheader("Team Pitching NRFI Ratings")
 st.dataframe(df.sort_values("nrfi_score", ascending=False))
 
-st.subheader("🔥 Best NRFI Targets")
+st.subheader("🔥 Best NRFI Teams")
 st.dataframe(df[df["edge_tier"] == "🔥 STRONG NRFI"])
 
 st.caption(f"Last Updated: {df['timestamp'].iloc[0]}")
