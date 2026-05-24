@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-st.title("⚾ NRFI Edge Model (Fixed Probabilities)")
+st.title("⚾ NRFI Edge Model (Betting Version)")
 
 # ----------------------------
-# TEAM DATA (NORMALIZED SCALE)
+# TEAM DATA
 # ----------------------------
 teams = pd.DataFrame([
     {"team": "NYY", "k_rate": 23.5, "obp": 0.323, "power": 0.180},
@@ -29,46 +29,38 @@ games = pd.DataFrame([
 rows = []
 
 # ----------------------------
-# FIXED NRFI MODEL (SCALED PROPERLY)
+# MODEL
 # ----------------------------
 for _, g in games.iterrows():
 
     away = teams[teams["team"] == g["away"]].iloc[0]
     home = teams[teams["team"] == g["home"]].iloc[0]
 
-    # Normalize K rate (important fix)
-    pitching_factor = (
-        (away["k_rate"] + home["k_rate"]) / 2 / 30
-    )
+    pitching = (away["k_rate"] + home["k_rate"]) / 2 / 30
+    offense = (away["obp"] + home["obp"]) / 2 + (away["power"] + home["power"]) / 4
 
-    # Normalize offense properly (NO giant multipliers)
-    offense_factor = (
-        (away["obp"] + home["obp"]) / 2 +
-        (away["power"] + home["power"]) / 4
-    )
+    score = pitching - offense
 
-    # Balanced differential
-    score = pitching_factor - offense_factor
-
-    # Stable sigmoid (prevents collapse)
     nrfi_prob = 1 / (1 + np.exp(-8 * score))
 
     rows.append({
         "away_team": g["away"],
         "home_team": g["home"],
         "nrfi_prob": round(nrfi_prob, 3),
-        "pitching_factor": round(pitching_factor, 3),
-        "offense_factor": round(offense_factor, 3),
     })
 
 df = pd.DataFrame(rows)
 
 # ----------------------------
-# EDGE TIERS
+# EDGE CALCULATION (REAL IMPROVEMENT)
 # ----------------------------
-df["edge_tier"] = df["nrfi_prob"].apply(
-    lambda x: "🔥 STRONG NRFI" if x >= 0.62
-    else ("✅ LEAN NRFI" if x >= 0.55 else "PASS")
+league_avg = 0.52
+
+df["edge"] = df["nrfi_prob"] - league_avg
+
+df["edge_tier"] = df["edge"].apply(
+    lambda x: "🔥 STRONG NRFI" if x >= 0.05
+    else ("✅ LEAN NRFI" if x >= 0.02 else "PASS")
 )
 
 df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -79,12 +71,12 @@ df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 st.subheader("All Games")
 st.dataframe(df)
 
-st.subheader("🔥 Best Plays")
+st.subheader("🔥 Best Plays (Positive Edge Only)")
 
-best = df[df["edge_tier"] == "🔥 STRONG NRFI"]
+best = df[df["edge"] >= 0.05]
 
 if best.empty:
-    best = df.sort_values("nrfi_prob", ascending=False).head(2)
+    best = df.sort_values("edge", ascending=False).head(2)
 
 st.dataframe(best)
 
