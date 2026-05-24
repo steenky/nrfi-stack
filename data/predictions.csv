@@ -1,2 +1,6 @@
-away_team,home_team,model1,model2,model3,timestamp
-Yankees,Red Sox,0.62,0.7,0.74,2026-05-24 05:53:23.714436
+away_team,home_team,model1,model2,model3,avg_nrfi,timestamp
+Yankees,Red Sox,0.6,0.65,0.7,0.65,2026-05-24 06:08 AM
+Dodgers,Giants,0.62,0.67,0.72,0.6699999999999999,2026-05-24 06:08 AM
+Braves,Mets,0.64,0.69,0.74,0.6900000000000001,2026-05-24 06:08 AM
+Astros,Rangers,0.66,0.71,0.76,0.71,2026-05-24 06:08 AM
+Cubs,Cardinals,0.68,0.73,0.78,0.7300000000000001,2026-05-24 06:08 AM
