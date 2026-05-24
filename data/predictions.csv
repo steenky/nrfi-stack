@@ -1,4 +1,2 @@
-
-away_team,home_team,model1,model2,model3,avg_nrfi
-Yankees,Red Sox,0.62,0.70,0.74,0.69
-Dodgers,Giants,0.66,0.71,0.78,0.72
+away_team,home_team,model1,model2,model3,timestamp
+Yankees,Red Sox,0.62,0.7,0.74,2026-05-24 05:53:23.714436
