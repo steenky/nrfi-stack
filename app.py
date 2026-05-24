@@ -32,4 +32,10 @@ df = df.sort_values("avg_nrfi", ascending=False)
 st.dataframe(df)
 
 st.subheader("🔥 Best Plays")
-st.dataframe(df[df["avg_nrfi"] > 0.68])
+
+best_plays = df[df["avg_nrfi"] > df["avg_nrfi"].quantile(0.70)]
+
+if len(best_plays) > 0:
+    st.dataframe(best_plays)
+else:
+    st.write("No strong NRFI edges today based on model threshold.")
