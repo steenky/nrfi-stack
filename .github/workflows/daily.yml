@@ -23,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    - name: Run model
+    - name: Run pipeline
       run: python src/predict_all.py
 
     - name: Commit results
