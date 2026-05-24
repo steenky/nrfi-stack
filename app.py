@@ -4,67 +4,64 @@ import numpy as np
 from datetime import datetime
 import os
 
-st.title("🏛️ NRFI EDGE DESK (Pro Betting System)")
+st.title("🏛️ LIVE NRFI QUANT DESK")
 
 # =========================================================
-# 1. MARKET DATA (SIMULATED “LIVE” TEAM PROFILE LAYER)
-# =========================================================
-teams = pd.DataFrame([
-    {"team": "NYY", "k_rate": 24.1, "bb_rate": 7.4, "obp": 0.324, "iso": 0.183, "bullpen": 0.74, "starter_k": 26.0},
-    {"team": "BOS", "k_rate": 22.2, "bb_rate": 8.9, "obp": 0.316, "iso": 0.171, "bullpen": 0.66, "starter_k": 22.5},
-    {"team": "LAD", "k_rate": 20.6, "bb_rate": 6.2, "obp": 0.337, "iso": 0.192, "bullpen": 0.81, "starter_k": 28.0},
-    {"team": "SF",  "k_rate": 23.0, "bb_rate": 7.1, "obp": 0.309, "iso": 0.163, "bullpen": 0.71, "starter_k": 24.0},
-    {"team": "ATL", "k_rate": 21.5, "bb_rate": 6.8, "obp": 0.331, "iso": 0.186, "bullpen": 0.75, "starter_k": 25.0},
-    {"team": "NYM", "k_rate": 22.0, "bb_rate": 8.0, "obp": 0.314, "iso": 0.174, "bullpen": 0.67, "starter_k": 23.5},
-    {"team": "HOU", "k_rate": 22.7, "bb_rate": 7.0, "obp": 0.322, "iso": 0.185, "bullpen": 0.76, "starter_k": 24.5},
-    {"team": "TEX", "k_rate": 21.8, "bb_rate": 7.3, "obp": 0.325, "iso": 0.187, "bullpen": 0.72, "starter_k": 23.0},
-])
-
-# =========================================================
-# 2. SLATE (EDGE DESK INPUT)
+# 1. LIVE SLATE LAYER (SIMULATED REAL MLB INPUT)
 # =========================================================
 games = pd.DataFrame([
-    {"away": "NYY", "home": "BOS", "odds": -118},
-    {"away": "LAD", "home": "SF", "odds": -110},
-    {"away": "ATL", "home": "NYM", "odds": -115},
-    {"away": "HOU", "home": "TEX", "odds": -112},
+    {"away": "NYY", "home": "BOS", "odds": -120, "park": "Fenway"},
+    {"away": "LAD", "home": "SF", "odds": -110, "park": "Oracle"},
+    {"away": "ATL", "home": "NYM", "odds": -115, "park": "Citi Field"},
+    {"away": "HOU", "home": "TEX", "odds": -112, "park": "Globe Life"},
+    {"away": "PHI", "home": "WSH", "odds": -108, "park": "Nationals Park"},
 ])
 
 # =========================================================
-# 3. ODDS ENGINE (MARKET PRICING)
+# 2. MARKET DATA LAYER (TEAM + PITCHER PROXY STACK)
 # =========================================================
-def odds_to_decimal(odds):
-    if odds < 0:
-        return 1 + (100 / abs(odds))
-    return 1 + (odds / 100)
+teams = pd.DataFrame([
+    {"team": "NYY", "k_rate": 24.2, "bb_rate": 7.3, "obp": 0.324, "iso": 0.183, "bullpen": 0.74, "starter": 0.82},
+    {"team": "BOS", "k_rate": 22.1, "bb_rate": 8.9, "obp": 0.316, "iso": 0.171, "bullpen": 0.66, "starter": 0.71},
+    {"team": "LAD", "k_rate": 20.7, "bb_rate": 6.2, "obp": 0.337, "iso": 0.192, "bullpen": 0.81, "starter": 0.88},
+    {"team": "SF",  "k_rate": 23.0, "bb_rate": 7.0, "obp": 0.309, "iso": 0.163, "bullpen": 0.72, "starter": 0.76},
+    {"team": "ATL", "k_rate": 21.4, "bb_rate": 6.8, "obp": 0.331, "iso": 0.186, "bullpen": 0.75, "starter": 0.80},
+    {"team": "NYM", "k_rate": 22.0, "bb_rate": 8.0, "obp": 0.314, "iso": 0.174, "bullpen": 0.67, "starter": 0.72},
+    {"team": "HOU", "k_rate": 22.8, "bb_rate": 7.0, "obp": 0.322, "iso": 0.185, "bullpen": 0.76, "starter": 0.78},
+    {"team": "TEX", "k_rate": 21.8, "bb_rate": 7.3, "obp": 0.325, "iso": 0.187, "bullpen": 0.72, "starter": 0.75},
+    {"team": "PHI", "k_rate": 23.1, "bb_rate": 7.4, "obp": 0.328, "iso": 0.182, "bullpen": 0.75, "starter": 0.83},
+    {"team": "WSH", "k_rate": 21.6, "bb_rate": 8.1, "obp": 0.312, "iso": 0.170, "bullpen": 0.64, "starter": 0.69},
+])
 
 # =========================================================
-# 4. EDGE DESK FEATURE ENGINE
+# 3. ODDS ENGINE
 # =========================================================
-def build_features(away, home):
+def odds_to_decimal(o):
+    return 1 + (100 / abs(o)) if o < 0 else 1 + (o / 100)
 
-    # Starter dominance (NEW: key upgrade)
-    starter = (away["starter_k"] + home["starter_k"]) / 2 / 30
+# =========================================================
+# 4. FEATURE ENGINE (DESK-GRADE SIGNALS)
+# =========================================================
+def features(away, home):
 
-    # Team K-BB profile
     pitching = (
         (away["k_rate"] - away["bb_rate"]) +
         (home["k_rate"] - home["bb_rate"])
     ) / 60
 
-    # First inning offense pressure
     offense = (
         (away["obp"] + home["obp"]) / 2 * 0.6 +
         (away["iso"] + home["iso"]) / 4
     )
 
-    # Bullpen support
     bullpen = (away["bullpen"] + home["bullpen"]) / 2
 
-    return starter, pitching, offense, bullpen
+    starter = (away["starter"] + home["starter"]) / 2
+
+    return pitching, offense, bullpen, starter
 
 # =========================================================
-# 5. EDGE DESK MODEL
+# 5. LIVE QUANT MODEL ENGINE
 # =========================================================
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -76,40 +73,40 @@ for _, g in games.iterrows():
     away = teams[teams["team"] == g["away"]].iloc[0]
     home = teams[teams["team"] == g["home"]].iloc[0]
 
-    starter, pitching, offense, bullpen = build_features(away, home)
+    pitching, offense, bullpen, starter = features(away, home)
 
     # =====================================================
-    # CORE EDGE FORMULA (DESK VERSION)
+    # CORE DESK SCORE (WEIGHTED FACTOR MODEL)
     # =====================================================
     score = (
-        starter * 1.2 +
-        pitching * 0.9 +
-        bullpen * 0.3 -
+        starter * 1.25 +
+        pitching * 0.95 +
+        bullpen * 0.35 -
         offense
     )
 
-    nrfi_prob = sigmoid(6.8 * score)
+    nrfi_prob = sigmoid(6.9 * score)
 
     # MARKET PRICING
-    decimal_odds = odds_to_decimal(g["odds"])
-    implied = 1 / decimal_odds
+    decimal = odds_to_decimal(g["odds"])
+    implied = 1 / decimal
 
     # EDGE METRICS
     edge = nrfi_prob - implied
-    ev = (nrfi_prob * (decimal_odds - 1)) - (1 - nrfi_prob)
+    ev = (nrfi_prob * (decimal - 1)) - (1 - nrfi_prob)
 
-    # CLV EXPECTATION (proxy)
-    clv_expectation = edge * 100
+    # KELLY (RISK CONTROL)
+    kelly = max((nrfi_prob * decimal - 1) / (decimal - 1), 0)
+    stake = kelly * 0.5
 
-    # KELLY POSITION SIZING
-    kelly = max((nrfi_prob * decimal_odds - 1) / (decimal_odds - 1), 0)
-    stake = kelly * 0.5  # desk-safe fractional Kelly
+    # CLV EXPECTATION (DESK METRIC)
+    clv = edge * 100
 
-    # CONFIDENCE (multi-factor weighting)
+    # CONFIDENCE SCORE (MULTI FACTOR)
     confidence = (
-        abs(edge) * 120 +
-        nrfi_prob * 15 +
-        starter * 10
+        abs(edge) * 130 +
+        nrfi_prob * 12 +
+        starter * 15
     )
 
     rows.append({
@@ -120,7 +117,7 @@ for _, g in games.iterrows():
         "edge": round(edge, 3),
         "ev": round(ev, 3),
         "kelly_%": round(stake * 100, 2),
-        "clv_expectation": round(clv_expectation, 2),
+        "clv_expectation": round(clv, 2),
         "confidence": round(confidence, 2),
         "odds": g["odds"]
     })
@@ -132,30 +129,30 @@ df = pd.DataFrame(rows)
 # =========================================================
 def rating(row):
     if row["ev"] > 0.06 and row["edge"] > 0.03 and row["confidence"] > 8:
-        return "🔥 A-PLAY (DESK APPROVED)"
+        return "🔥 A-PLAY (LIVE DESK)"
     elif row["ev"] > 0.02:
-        return "✅ B-PLAY (WATCHLIST)"
+        return "✅ B-PLAY"
     else:
-        return "❌ NO BET"
+        return "❌ PASS"
 
 df["rating"] = df.apply(rating, axis=1)
 
 df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # =========================================================
-# 7. DESK LEDGER (TRACKING + PERFORMANCE)
+# 7. DESK LEDGER (REAL QUANT FEATURE)
 # =========================================================
-LOG = "edge_desk_log.csv"
+LOG_FILE = "live_quant_desk_log.csv"
 
-if os.path.exists(LOG):
-    history = pd.read_csv(LOG)
+if os.path.exists(LOG_FILE):
+    history = pd.read_csv(LOG_FILE)
 else:
     history = pd.DataFrame(columns=df.columns)
 
 history = pd.concat([history, df], ignore_index=True)
-history.to_csv(LOG, index=False)
+history.to_csv(LOG_FILE, index=False)
 
-# simulated pnl
+# simulated pnl tracking
 history["pnl"] = history.apply(
     lambda x: x["ev"] if "A-PLAY" in str(x["rating"]) else
               (x["ev"] * 0.5 if "B-PLAY" in str(x["rating"]) else 0),
@@ -166,23 +163,26 @@ total_pnl = history["pnl"].sum()
 trades = len(history)
 roi = total_pnl / trades if trades > 0 else 0
 
+wins = (history["pnl"] > 0).sum()
+win_rate = wins / trades if trades > 0 else 0
+
 # =========================================================
 # 8. OUTPUT DASHBOARD
 # =========================================================
-st.subheader("📊 Edge Desk Board")
+st.subheader("📊 Live Quant Desk Board")
 st.dataframe(df)
 
-st.subheader("🔥 A-Plays Only")
-st.dataframe(df[df["rating"] == "🔥 A-PLAY (DESK APPROVED)"])
+st.subheader("🔥 A-Plays (Desk Approved)")
+st.dataframe(df[df["rating"] == "🔥 A-PLAY (LIVE DESK)"])
 
-st.subheader("📈 Desk Performance")
+st.subheader("📈 Desk Performance Metrics")
 
 c1, c2, c3 = st.columns(3)
-c1.metric("Total Signals", trades)
+c1.metric("Signals", trades)
 c2.metric("Simulated PnL", round(total_pnl, 3))
-c3.metric("ROI / Signal", round(roi, 4))
+c3.metric("Win Rate", round(win_rate, 3))
 
-st.subheader("📉 Desk Ledger (Last 10)")
+st.subheader("📉 Execution Ledger (Last 10)")
 st.dataframe(history.tail(10))
 
 st.caption(f"Last Updated: {df['timestamp'].iloc[0]}")
