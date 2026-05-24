@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-st.title("⚾ NRFI Edge Model (Upgraded)")
+st.title("⚾ NRFI Edge Model (Fixed Probabilities)")
 
 # ----------------------------
-# TEAM DATA (MORE REALISTIC SIGNALS)
+# TEAM DATA (NORMALIZED SCALE)
 # ----------------------------
 teams = pd.DataFrame([
     {"team": "NYY", "k_rate": 23.5, "obp": 0.323, "power": 0.180},
@@ -18,7 +18,7 @@ teams = pd.DataFrame([
 ])
 
 # ----------------------------
-# SAMPLE MATCHUPS
+# MATCHUPS
 # ----------------------------
 games = pd.DataFrame([
     {"away": "NYY", "home": "BOS"},
@@ -29,39 +29,42 @@ games = pd.DataFrame([
 rows = []
 
 # ----------------------------
-# IMPROVED NRFI MODEL
+# FIXED NRFI MODEL (SCALED PROPERLY)
 # ----------------------------
 for _, g in games.iterrows():
 
     away = teams[teams["team"] == g["away"]].iloc[0]
     home = teams[teams["team"] == g["home"]].iloc[0]
 
-    # Pitching environment (higher opponent K rate = better for NRFI)
+    # Normalize K rate (important fix)
     pitching_factor = (
-        (away["k_rate"] + home["k_rate"]) / 2
+        (away["k_rate"] + home["k_rate"]) / 2 / 30
     )
 
-    # Offensive pressure (OBP + power = bad for NRFI)
+    # Normalize offense properly (NO giant multipliers)
     offense_factor = (
-        (away["obp"] + home["obp"]) * 50 +
-        (away["power"] + home["power"]) * 100
+        (away["obp"] + home["obp"]) / 2 +
+        (away["power"] + home["power"]) / 4
     )
 
-    # NRFI probability (calibrated logistic model)
-    nrfi_prob = 1 / (1 + np.exp(-(pitching_factor - offense_factor)))
+    # Balanced differential
+    score = pitching_factor - offense_factor
+
+    # Stable sigmoid (prevents collapse)
+    nrfi_prob = 1 / (1 + np.exp(-8 * score))
 
     rows.append({
         "away_team": g["away"],
         "home_team": g["home"],
         "nrfi_prob": round(nrfi_prob, 3),
-        "pitching_factor": round(pitching_factor, 2),
-        "offense_factor": round(offense_factor, 2)
+        "pitching_factor": round(pitching_factor, 3),
+        "offense_factor": round(offense_factor, 3),
     })
 
 df = pd.DataFrame(rows)
 
 # ----------------------------
-# EDGE TIERS (REALISTIC THRESHOLDS)
+# EDGE TIERS
 # ----------------------------
 df["edge_tier"] = df["nrfi_prob"].apply(
     lambda x: "🔥 STRONG NRFI" if x >= 0.62
