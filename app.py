@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-st.title("⚾ NRFI Edge Model (Betting Version)")
+st.title("⚾ NRFI EV Betting Model")
 
 # ----------------------------
 # TEAM DATA
@@ -21,12 +21,21 @@ teams = pd.DataFrame([
 # MATCHUPS
 # ----------------------------
 games = pd.DataFrame([
-    {"away": "NYY", "home": "BOS"},
-    {"away": "LAD", "home": "SF"},
-    {"away": "ATL", "home": "NYM"},
+    {"away": "NYY", "home": "BOS", "odds": -120},
+    {"away": "LAD", "home": "SF", "odds": -110},
+    {"away": "ATL", "home": "NYM", "odds": -115},
 ])
 
 rows = []
+
+# ----------------------------
+# CONVERT ODDS → DECIMAL
+# ----------------------------
+def odds_to_decimal(odds):
+    if odds < 0:
+        return 1 + (100 / abs(odds))
+    else:
+        return 1 + (odds / 100)
 
 # ----------------------------
 # MODEL
@@ -36,31 +45,41 @@ for _, g in games.iterrows():
     away = teams[teams["team"] == g["away"]].iloc[0]
     home = teams[teams["team"] == g["home"]].iloc[0]
 
+    # Pitching strength
     pitching = (away["k_rate"] + home["k_rate"]) / 2 / 30
+
+    # Offensive pressure
     offense = (away["obp"] + home["obp"]) / 2 + (away["power"] + home["power"]) / 4
 
+    # NRFI probability
     score = pitching - offense
-
     nrfi_prob = 1 / (1 + np.exp(-8 * score))
+
+    # ----------------------------
+    # ODDS + EV CALCULATION
+    # ----------------------------
+    decimal_odds = odds_to_decimal(g["odds"])
+    implied_prob = 1 / decimal_odds
+
+    ev = (nrfi_prob * (decimal_odds - 1)) - (1 - nrfi_prob)
 
     rows.append({
         "away_team": g["away"],
         "home_team": g["home"],
         "nrfi_prob": round(nrfi_prob, 3),
+        "implied_prob": round(implied_prob, 3),
+        "ev": round(ev, 3),
+        "odds": g["odds"]
     })
 
 df = pd.DataFrame(rows)
 
 # ----------------------------
-# EDGE CALCULATION (REAL IMPROVEMENT)
+# EDGE CLASSIFICATION
 # ----------------------------
-league_avg = 0.52
-
-df["edge"] = df["nrfi_prob"] - league_avg
-
-df["edge_tier"] = df["edge"].apply(
-    lambda x: "🔥 STRONG NRFI" if x >= 0.05
-    else ("✅ LEAN NRFI" if x >= 0.02 else "PASS")
+df["edge_tier"] = df["ev"].apply(
+    lambda x: "🔥 +EV PLAY" if x > 0.05
+    else ("⚠️ SMALL EDGE" if x > 0 else "❌ NO BET")
 )
 
 df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -68,15 +87,15 @@ df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # ----------------------------
 # DISPLAY
 # ----------------------------
-st.subheader("All Games")
+st.subheader("All Games (EV Model)")
 st.dataframe(df)
 
-st.subheader("🔥 Best Plays (Positive Edge Only)")
+st.subheader("🔥 Best +EV Plays")
 
-best = df[df["edge"] >= 0.05]
+best = df[df["ev"] > 0.05]
 
 if best.empty:
-    best = df.sort_values("edge", ascending=False).head(2)
+    best = df.sort_values("ev", ascending=False).head(2)
 
 st.dataframe(best)
 
