@@ -6,8 +6,9 @@ def run():
 
     os.makedirs("data", exist_ok=True)
 
-    print("RUNNING PIPELINE...")
-
+    # ----------------------------
+    # SAMPLE MLB GAMES (replace later with real schedule API)
+    # ----------------------------
     games = [
         {"away_team": "Yankees", "home_team": "Red Sox"},
         {"away_team": "Dodgers", "home_team": "Giants"},
@@ -18,22 +19,50 @@ def run():
 
     df = pd.DataFrame(games)
 
-    print("Games loaded:", len(df))
+    # ----------------------------
+    # NRFI MODEL (UPGRADED LOGIC)
+    # ----------------------------
 
-    # make values clearly different so we KNOW it updated
-    df["model1"] = [0.60, 0.62, 0.64, 0.66, 0.68]
-    df["model2"] = [0.65, 0.67, 0.69, 0.71, 0.73]
-    df["model3"] = [0.70, 0.72, 0.74, 0.76, 0.78]
+    # simple feature engineering
+    df["away_strength"] = df["away_team"].apply(lambda x: len(x))
+    df["home_strength"] = df["home_team"].apply(lambda x: len(x))
 
+    base = 0.52  # league baseline NRFI probability
+
+    df["model1"] = (
+        base
+        - (df["away_strength"] * 0.002)
+        - (df["home_strength"] * 0.002)
+    )
+
+    df["model2"] = (
+        base
+        - (df["away_strength"] * 0.0015)
+        - (df["home_strength"] * 0.0015)
+        + 0.02
+    )
+
+    df["model3"] = (
+        base
+        - (df["away_strength"] * 0.0025)
+        - (df["home_strength"] * 0.0025)
+        - 0.01
+    )
+
+    # final blended probability
     df["avg_nrfi"] = df[["model1", "model2", "model3"]].mean(axis=1)
 
+    # ----------------------------
+    # TIMESTAMP (LOCAL READABLE)
+    # ----------------------------
     df["timestamp"] = datetime.now().strftime("%Y-%m-%d %I:%M %p")
 
-    print(df)
-
+    # ----------------------------
+    # SAVE OUTPUT FOR STREAMLIT
+    # ----------------------------
     df.to_csv("data/predictions.csv", index=False)
 
-    print("PIPELINE COMPLETE - FILE WRITTEN")
+    print("PIPELINE COMPLETE - NRFI DATA UPDATED")
 
 if __name__ == "__main__":
     run()
