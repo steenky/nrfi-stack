@@ -7,9 +7,6 @@ def run():
 
     os.makedirs("data", exist_ok=True)
 
-    # ----------------------------
-    # MLB GAME SLATE
-    # ----------------------------
     games = [
         {
             "away_team": "Yankees",
@@ -45,51 +42,131 @@ def run():
 
     df = pd.DataFrame(games)
 
-    # ----------------------------
-    # ADVANCED PITCHER METRICS
-    # ----------------------------
-
     pitcher_metrics = {
-        "Cole": {"whip": 1.05, "k9": 10.8, "bb9": 2.1, "hr9": 0.8},
-        "Bello": {"whip": 1.31, "k9": 8.2, "bb9": 3.3, "hr9": 1.1},
 
-        "Yamamoto": {"whip": 1.02, "k9": 10.4, "bb9": 2.0, "hr9": 0.7},
-        "Webb": {"whip": 1.15, "k9": 8.5, "bb9": 1.9, "hr9": 0.9},
+        "Cole": {
+            "whip": 1.05,
+            "k9": 10.8,
+            "bb9": 2.1,
+            "hr9": 0.8
+        },
 
-        "Strider": {"whip": 1.09, "k9": 13.2, "bb9": 2.8, "hr9": 0.9},
-        "Senga": {"whip": 1.20, "k9": 10.1, "bb9": 3.4, "hr9": 0.8},
+        "Bello": {
+            "whip": 1.31,
+            "k9": 8.2,
+            "bb9": 3.3,
+            "hr9": 1.1
+        },
 
-        "Valdez": {"whip": 1.14, "k9": 9.1, "bb9": 2.9, "hr9": 0.7},
-        "Eovaldi": {"whip": 1.18, "k9": 8.9, "bb9": 2.2, "hr9": 1.0},
+        "Yamamoto": {
+            "whip": 1.02,
+            "k9": 10.4,
+            "bb9": 2.0,
+            "hr9": 0.7
+        },
 
-        "Steele": {"whip": 1.16, "k9": 9.4, "bb9": 2.5, "hr9": 0.8},
-        "Gray": {"whip": 1.21, "k9": 9.0, "bb9": 2.7, "hr9": 0.9},
+        "Webb": {
+            "whip": 1.15,
+            "k9": 8.5,
+            "bb9": 1.9,
+            "hr9": 0.9
+        },
+
+        "Strider": {
+            "whip": 1.09,
+            "k9": 13.2,
+            "bb9": 2.8,
+            "hr9": 0.9
+        },
+
+        "Senga": {
+            "whip": 1.20,
+            "k9": 10.1,
+            "bb9": 3.4,
+            "hr9": 0.8
+        },
+
+        "Valdez": {
+            "whip": 1.14,
+            "k9": 9.1,
+            "bb9": 2.9,
+            "hr9": 0.7
+        },
+
+        "Eovaldi": {
+            "whip": 1.18,
+            "k9": 8.9,
+            "bb9": 2.2,
+            "hr9": 1.0
+        },
+
+        "Steele": {
+            "whip": 1.16,
+            "k9": 9.4,
+            "bb9": 2.5,
+            "hr9": 0.8
+        },
+
+        "Gray": {
+            "whip": 1.21,
+            "k9": 9.0,
+            "bb9": 2.7,
+            "hr9": 0.9
+        },
     }
-
-    # ----------------------------
-    # OFFENSIVE PRESSURE METRICS
-    # ----------------------------
 
     offense_metrics = {
-        "Yankees": {"obp": 0.334, "k_rate": 0.238},
-        "Red Sox": {"obp": 0.321, "k_rate": 0.241},
 
-        "Dodgers": {"obp": 0.346, "k_rate": 0.212},
-        "Giants": {"obp": 0.314, "k_rate": 0.249},
+        "Yankees": {
+            "obp": 0.334,
+            "k_rate": 0.238
+        },
 
-        "Braves": {"obp": 0.337, "k_rate": 0.227},
-        "Mets": {"obp": 0.312, "k_rate": 0.253},
+        "Red Sox": {
+            "obp": 0.321,
+            "k_rate": 0.241
+        },
 
-        "Astros": {"obp": 0.326, "k_rate": 0.231},
-        "Rangers": {"obp": 0.319, "k_rate": 0.246},
+        "Dodgers": {
+            "obp": 0.346,
+            "k_rate": 0.212
+        },
 
-        "Cubs": {"obp": 0.313, "k_rate": 0.251},
-        "Cardinals": {"obp": 0.322, "k_rate": 0.239},
+        "Giants": {
+            "obp": 0.314,
+            "k_rate": 0.249
+        },
+
+        "Braves": {
+            "obp": 0.337,
+            "k_rate": 0.227
+        },
+
+        "Mets": {
+            "obp": 0.312,
+            "k_rate": 0.253
+        },
+
+        "Astros": {
+            "obp": 0.326,
+            "k_rate": 0.231
+        },
+
+        "Rangers": {
+            "obp": 0.319,
+            "k_rate": 0.246
+        },
+
+        "Cubs": {
+            "obp": 0.313,
+            "k_rate": 0.251
+        },
+
+        "Cardinals": {
+            "obp": 0.322,
+            "k_rate": 0.239
+        },
     }
-
-    # ----------------------------
-    # PARK FACTORS
-    # ----------------------------
 
     park_factor = {
         "Red Sox": 1.05,
@@ -98,10 +175,6 @@ def run():
         "Rangers": 1.08,
         "Cardinals": 0.99
     }
-
-    # ----------------------------
-    # FEATURE ENGINEERING
-    # ----------------------------
 
     def build_features(row):
 
@@ -141,38 +214,19 @@ def run():
 
     df = pd.concat([df, features], axis=1)
 
-    # ----------------------------
-    # ADVANCED NRFI MODEL
-    # ----------------------------
-
     base = 0.52
 
     df["model1"] = (
         base
-
-        # WHIP suppression
         - (df["combined_whip"] - 2.30) * 0.28
-
-        # strikeout upside
         + (df["combined_k9"] - 18.0) * 0.012
-
-        # walk risk
         - (df["combined_bb9"] - 5.2) * 0.020
-
-        # HR suppression
         - (df["combined_hr9"] - 1.8) * 0.045
-
-        # offense pressure
         - (df["combined_obp"] - 0.64) * 0.90
-
-        # offense strikeout tendencies
         + (df["combined_k_rate"] - 0.48) * 0.65
-
-        # park environment
         - (df["park_factor"] - 1.00) * 0.12
     )
 
-    # ensemble stabilization
     df["model2"] = df["model1"] + 0.012
     df["model3"] = df["model1"] - 0.009
 
@@ -181,10 +235,6 @@ def run():
         .mean(axis=1)
         .clip(0.01, 0.99)
     )
-
-    # ----------------------------
-    # BETTING TIERS
-    # ----------------------------
 
     conditions = [
         df["avg_nrfi"] >= 0.58,
@@ -202,15 +252,7 @@ def run():
         default="PASS"
     )
 
-    # ----------------------------
-    # TIMESTAMP
-    # ----------------------------
-
     df["timestamp"] = datetime.now().strftime("%Y-%m-%d %I:%M %p")
-
-    # ----------------------------
-    # SAVE OUTPUT
-    # ----------------------------
 
     df = df.sort_values(
         by="avg_nrfi",
