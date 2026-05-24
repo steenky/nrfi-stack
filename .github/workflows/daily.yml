@@ -25,9 +25,3 @@ jobs:
 
       - name: Run pipeline
         run: python src/predict_all.py
-
-      - name: Commit results
-  uses: stefanzweifel/git-auto-commit-action@v5
-  with:
-    commit_message: update predictions
-    file_pattern: data/*
