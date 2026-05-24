@@ -14,7 +14,7 @@ def run():
 
     df["avg_nrfi"] = df[["model1","model2","model3"]].mean(axis=1)
 
-    df.to_csv("data/predictions.csv", index=False)
+    df.to_csv("Data/Predictions.csv", index=False)
 
 if __name__ == "__main__":
     run()
