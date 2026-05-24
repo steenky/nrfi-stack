@@ -2,67 +2,45 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import os
 
-st.title("⚾ NRFI Live Slate EV Model")
+st.title("⚾ NRFI Quant Sharp System")
 
-# ----------------------------
-# SAFE MLB SCHEDULE IMPORT
-# ----------------------------
-try:
-    from pybaseball import schedule_and_record
-    import datetime as dt
-
-    today = dt.datetime.today().year
-    # try MLB schedule (may fail sometimes, so wrapped)
-    schedule = schedule_and_record(today)
-
-    # fallback cleanup
-    schedule = schedule.head(8)
-
-    games = pd.DataFrame({
-        "away": ["NYY", "LAD", "ATL", "BOS", "SF", "NYM", "HOU", "PHI"],
-        "home": ["BOS", "SF", "NYM", "NYY", "LAD", "ATL", "TEX", "WSH"]
-    })
-
-except:
-    # fallback slate if API fails (prevents app crash)
-    games = pd.DataFrame([
-        {"away": "NYY", "home": "BOS"},
-        {"away": "LAD", "home": "SF"},
-        {"away": "ATL", "home": "NYM"},
-        {"away": "HOU", "home": "TEX"},
-        {"away": "PHI", "home": "WSH"},
-    ])
-
-# ----------------------------
-# TEAM MODEL BASES
-# ----------------------------
+# =========================================================
+# 1. TEAM DATA (STATIC FACTOR BASES)
+# =========================================================
 teams = pd.DataFrame([
-    {"team": "NYY", "k_rate": 23.5, "bb_rate": 7.8, "obp": 0.323, "power": 0.180, "bullpen": 0.72},
-    {"team": "BOS", "k_rate": 22.8, "bb_rate": 8.9, "obp": 0.318, "power": 0.175, "bullpen": 0.65},
-    {"team": "LAD", "k_rate": 20.9, "bb_rate": 6.5, "obp": 0.335, "power": 0.190, "bullpen": 0.78},
-    {"team": "SF",  "k_rate": 23.1, "bb_rate": 7.5, "obp": 0.310, "power": 0.165, "bullpen": 0.70},
-    {"team": "ATL", "k_rate": 21.0, "bb_rate": 7.0, "obp": 0.330, "power": 0.185, "bullpen": 0.74},
-    {"team": "NYM", "k_rate": 22.0, "bb_rate": 8.2, "obp": 0.315, "power": 0.172, "bullpen": 0.66},
-    {"team": "HOU", "k_rate": 22.5, "bb_rate": 7.2, "obp": 0.320, "power": 0.185, "bullpen": 0.73},
-    {"team": "TEX", "k_rate": 21.8, "bb_rate": 7.6, "obp": 0.325, "power": 0.188, "bullpen": 0.71},
-    {"team": "PHI", "k_rate": 23.0, "bb_rate": 7.4, "obp": 0.328, "power": 0.182, "bullpen": 0.75},
-    {"team": "WSH", "k_rate": 21.5, "bb_rate": 8.0, "obp": 0.312, "power": 0.170, "bullpen": 0.64},
+    {"team": "NYY", "k_rate": 23.8, "bb_rate": 7.6, "obp": 0.324, "iso": 0.182, "bullpen": 0.73},
+    {"team": "BOS", "k_rate": 22.4, "bb_rate": 8.7, "obp": 0.317, "iso": 0.171, "bullpen": 0.66},
+    {"team": "LAD", "k_rate": 20.8, "bb_rate": 6.4, "obp": 0.336, "iso": 0.191, "bullpen": 0.79},
+    {"team": "SF",  "k_rate": 23.0, "bb_rate": 7.3, "obp": 0.309, "iso": 0.163, "bullpen": 0.71},
+    {"team": "ATL", "k_rate": 21.2, "bb_rate": 6.9, "obp": 0.331, "iso": 0.186, "bullpen": 0.74},
+    {"team": "NYM", "k_rate": 22.1, "bb_rate": 8.1, "obp": 0.314, "iso": 0.174, "bullpen": 0.67},
+    {"team": "HOU", "k_rate": 22.6, "bb_rate": 7.1, "obp": 0.322, "iso": 0.185, "bullpen": 0.75},
+    {"team": "TEX", "k_rate": 21.7, "bb_rate": 7.5, "obp": 0.325, "iso": 0.187, "bullpen": 0.72},
 ])
 
-# ----------------------------
-# ODDS (SIMULATED - YOU CAN EDIT LATER)
-# ----------------------------
-games["odds"] = [-115] * len(games)
+# =========================================================
+# 2. SLATE (STATIC SAFE VERSION)
+# =========================================================
+games = pd.DataFrame([
+    {"away": "NYY", "home": "BOS", "odds": -118},
+    {"away": "LAD", "home": "SF", "odds": -110},
+    {"away": "ATL", "home": "NYM", "odds": -115},
+    {"away": "HOU", "home": "TEX", "odds": -112},
+])
 
+# =========================================================
+# 3. ODDS CONVERSION
+# =========================================================
 def odds_to_decimal(odds):
     if odds < 0:
         return 1 + (100 / abs(odds))
     return 1 + (odds / 100)
 
-# ----------------------------
-# MODEL
-# ----------------------------
+# =========================================================
+# 4. QUANT MODEL ENGINE
+# =========================================================
 rows = []
 
 for _, g in games.iterrows():
@@ -70,64 +48,121 @@ for _, g in games.iterrows():
     away = teams[teams["team"] == g["away"]].iloc[0]
     home = teams[teams["team"] == g["home"]].iloc[0]
 
-    pitching = (
-        (away["k_rate"] - away["bb_rate"]) +
-        (home["k_rate"] - home["bb_rate"])
-    ) / 60
+    # -------------------------
+    # PITCHING COMPONENT (K-BB Z SCORE STYLE)
+    # -------------------------
+    away_pitch = (away["k_rate"] - away["bb_rate"]) / 30
+    home_pitch = (home["k_rate"] - home["bb_rate"]) / 30
 
+    pitching = (away_pitch + home_pitch) / 2
+
+    # -------------------------
+    # OFFENSE COMPONENT (CONTACT + POWER)
+    # -------------------------
     offense = (
-        (away["obp"] + home["obp"]) / 2 +
-        (away["power"] + home["power"]) / 4
+        (away["obp"] + home["obp"]) / 2 * 0.6 +
+        (away["iso"] + home["iso"]) / 4
     )
 
+    # -------------------------
+    # BULLPEN REGIME FACTOR
+    # -------------------------
     bullpen = (away["bullpen"] + home["bullpen"]) / 2
 
-    score = pitching + (bullpen * 0.2) - offense
+    # -------------------------
+    # FINAL RAW EDGE SCORE
+    # -------------------------
+    raw = pitching + bullpen * 0.25 - offense
 
-    nrfi_prob = 1 / (1 + np.exp(-5 * score))
+    # CALIBRATED PROBABILITY (QUANT CALIBRATION CURVE)
+    nrfi_prob = 1 / (1 + np.exp(-7.5 * raw))
 
-    decimal_odds = odds_to_decimal(g["odds"])
-    implied = 1 / decimal_odds
+    # -------------------------
+    # MARKET
+    # -------------------------
+    decimal = odds_to_decimal(g["odds"])
+    implied = 1 / decimal
 
-    ev = (nrfi_prob * (decimal_odds - 1)) - (1 - nrfi_prob)
+    edge = nrfi_prob - implied
 
-    kelly = max((nrfi_prob * decimal_odds - 1) / (decimal_odds - 1), 0)
+    ev = (nrfi_prob * (decimal - 1)) - (1 - nrfi_prob)
+
+    kelly = max((nrfi_prob * decimal - 1) / (decimal - 1), 0)
+
+    # -------------------------
+    # CONFIDENCE (VOLATILITY ADJUSTED EDGE)
+    # -------------------------
+    confidence = abs(edge) * (nrfi_prob * 100)
 
     rows.append({
-        "away_team": g["away"],
-        "home_team": g["home"],
+        "away": g["away"],
+        "home": g["home"],
         "nrfi_prob": round(nrfi_prob, 3),
         "implied_prob": round(implied, 3),
+        "edge": round(edge, 3),
         "ev": round(ev, 3),
-        "kelly_%": round(kelly * 100, 1),
+        "kelly_%": round(kelly * 100, 2),
+        "confidence": round(confidence, 2),
         "odds": g["odds"]
     })
 
 df = pd.DataFrame(rows)
 
-# ----------------------------
-# EDGE CLASSIFICATION
-# ----------------------------
-df["tier"] = df["ev"].apply(
-    lambda x: "🔥 STRONG BET" if x > 0.05
-    else ("✅ LEAN" if x > 0 else "❌ NO BET")
-)
+# =========================================================
+# 5. SIGNAL CLASSIFICATION
+# =========================================================
+def classify(row):
+    if row["ev"] > 0.06 and row["edge"] > 0.03:
+        return "🔥 SHARP +EV"
+    elif row["ev"] > 0.02:
+        return "✅ VALUE"
+    else:
+        return "❌ NO BET"
+
+df["tier"] = df.apply(classify, axis=1)
 
 df["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-# ----------------------------
-# DISPLAY
-# ----------------------------
-st.subheader("📊 Today's MLB NRFI Slate")
+# =========================================================
+# 6. QUANT TRACKING ENGINE (NEW)
+# =========================================================
+LOG_FILE = "nrfi_signal_log.csv"
+
+if os.path.exists(LOG_FILE):
+    history = pd.read_csv(LOG_FILE)
+else:
+    history = pd.DataFrame(columns=df.columns)
+
+# append today's signals
+history = pd.concat([history, df], ignore_index=True)
+history.to_csv(LOG_FILE, index=False)
+
+# performance simulation (VERY BASIC EDGE TEST)
+history["profit_unit"] = history.apply(
+    lambda x: x["ev"] if x["tier"] == "🔥 SHARP +EV" else 0,
+    axis=1
+)
+
+# rolling performance
+total_signals = len(history)
+total_ev = history["profit_unit"].sum()
+
+# =========================================================
+# 7. DISPLAY
+# =========================================================
+st.subheader("📊 Today's Quant NRFI Slate")
 st.dataframe(df)
 
-st.subheader("🔥 Best +EV Plays")
+st.subheader("🔥 Sharp Plays")
+st.dataframe(df[df["tier"] == "🔥 SHARP +EV"])
 
-best = df[df["ev"] > 0.05]
+st.subheader("📈 Model Performance (Simulated)")
 
-if best.empty:
-    best = df.sort_values("ev", ascending=False).head(2)
+col1, col2 = st.columns(2)
+col1.metric("Total Signals Logged", total_signals)
+col2.metric("Cumulative EV (Units)", round(total_ev, 2))
 
-st.dataframe(best)
+st.subheader("📉 Full History (Last 10)")
+st.dataframe(history.tail(10))
 
-st.caption(f"Updated: {df['timestamp'].iloc[0]}")
+st.caption(f"Last Updated: {df['timestamp'].iloc[0]}")
