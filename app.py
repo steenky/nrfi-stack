@@ -8,16 +8,28 @@ st.title("🔥 MLB NRFI Dashboard")
 
 file_path = "data/predictions.csv"
 
-if os.path.exists(file_path):
-    df = pd.read_csv(file_path)
+# ---------------- SAFE LOAD ----------------
+if os.path.exists(file_path) and os.path.getsize(file_path) > 10:
+    try:
+        df = pd.read_csv(file_path)
+    except Exception:
+        st.error("CSV exists but is corrupted. Re-run prediction pipeline.")
+        df = pd.DataFrame()
 else:
-    st.warning("No data yet — run prediction pipeline")
+    st.warning("No prediction data yet. Run pipeline to generate games.")
     df = pd.DataFrame()
 
-if len(df) > 0:
-    df = df.sort_values("avg_nrfi", ascending=False)
+# ---------------- STOP CRASHING ----------------
+if df.empty:
+    st.stop()
 
-    st.dataframe(df)
+# ---------------- CONTINUE NORMAL FLOW ----------------
+if "avg_nrfi" not in df.columns:
+    df["avg_nrfi"] = df[["model1", "model2", "model3"]].mean(axis=1)
 
-    st.subheader("🔥 Best Plays")
-    st.dataframe(df[df["avg_nrfi"] > 0.68])
+df = df.sort_values("avg_nrfi", ascending=False)
+
+st.dataframe(df)
+
+st.subheader("🔥 Best Plays")
+st.dataframe(df[df["avg_nrfi"] > 0.68])
