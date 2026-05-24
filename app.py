@@ -9,4 +9,6 @@ st.subheader("All Games")
 st.dataframe(df)
 
 st.subheader("Best Plays")
-st.dataframe(df[df["edge_tier"] != "PASS"])
+
+best = df[df["edge_tier"] == "🔥 STRONG NRFI"]
+st.dataframe(best)
