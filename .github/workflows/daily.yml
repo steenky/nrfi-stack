@@ -23,4 +23,4 @@ jobs:
           pip install pandas
 
       - name: Run Predictor
-        run: python src/predict_all.py
+        run: python src/predictor_v2.py
