@@ -1,5 +1,8 @@
 name: Daily NRFI Run
 
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: "0 13 * * *"
