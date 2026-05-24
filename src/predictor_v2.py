@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-print("PREDICTOR V2 RUNNING")
+print("V2 SCRIPT IS EXECUTING")
 
 os.makedirs("data", exist_ok=True)
 
