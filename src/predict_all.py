@@ -11,57 +11,92 @@ def run():
     # MLB GAME SLATE
     # ----------------------------
     games = [
-        {"away_team": "Yankees", "home_team": "Red Sox"},
-        {"away_team": "Dodgers", "home_team": "Giants"},
-        {"away_team": "Braves", "home_team": "Mets"},
-        {"away_team": "Astros", "home_team": "Rangers"},
-        {"away_team": "Cubs", "home_team": "Cardinals"},
+        {
+            "away_team": "Yankees",
+            "home_team": "Red Sox",
+            "away_pitcher": "Cole",
+            "home_pitcher": "Bello"
+        },
+        {
+            "away_team": "Dodgers",
+            "home_team": "Giants",
+            "away_pitcher": "Yamamoto",
+            "home_pitcher": "Webb"
+        },
+        {
+            "away_team": "Braves",
+            "home_team": "Mets",
+            "away_pitcher": "Strider",
+            "home_pitcher": "Senga"
+        },
+        {
+            "away_team": "Astros",
+            "home_team": "Rangers",
+            "away_pitcher": "Valdez",
+            "home_pitcher": "Eovaldi"
+        },
+        {
+            "away_team": "Cubs",
+            "home_team": "Cardinals",
+            "away_pitcher": "Steele",
+            "home_pitcher": "Gray"
+        }
     ]
 
     df = pd.DataFrame(games)
 
     # ----------------------------
-    # STARTER + TEAM STAT PROXIES (REAL STRUCTURE PLACEHOLDERS)
-    # Later upgrade = MLB API starter mapping
+    # ADVANCED PITCHER METRICS
     # ----------------------------
 
-    pitcher_stats = {
-        "Yankees": {"whip": 1.18, "k9": 9.4, "bb9": 2.6},
-        "Red Sox": {"whip": 1.25, "k9": 8.7, "bb9": 3.1},
-        "Dodgers": {"whip": 1.10, "k9": 10.2, "bb9": 2.3},
-        "Giants": {"whip": 1.20, "k9": 8.9, "bb9": 2.9},
-        "Braves": {"whip": 1.15, "k9": 9.1, "bb9": 2.7},
-        "Mets": {"whip": 1.22, "k9": 8.6, "bb9": 3.0},
-        "Astros": {"whip": 1.12, "k9": 9.8, "bb9": 2.4},
-        "Rangers": {"whip": 1.30, "k9": 8.3, "bb9": 3.3},
-        "Cubs": {"whip": 1.28, "k9": 8.5, "bb9": 3.2},
-        "Cardinals": {"whip": 1.19, "k9": 9.0, "bb9": 2.8},
+    pitcher_metrics = {
+        "Cole": {"whip": 1.05, "k9": 10.8, "bb9": 2.1, "hr9": 0.8},
+        "Bello": {"whip": 1.31, "k9": 8.2, "bb9": 3.3, "hr9": 1.1},
+
+        "Yamamoto": {"whip": 1.02, "k9": 10.4, "bb9": 2.0, "hr9": 0.7},
+        "Webb": {"whip": 1.15, "k9": 8.5, "bb9": 1.9, "hr9": 0.9},
+
+        "Strider": {"whip": 1.09, "k9": 13.2, "bb9": 2.8, "hr9": 0.9},
+        "Senga": {"whip": 1.20, "k9": 10.1, "bb9": 3.4, "hr9": 0.8},
+
+        "Valdez": {"whip": 1.14, "k9": 9.1, "bb9": 2.9, "hr9": 0.7},
+        "Eovaldi": {"whip": 1.18, "k9": 8.9, "bb9": 2.2, "hr9": 1.0},
+
+        "Steele": {"whip": 1.16, "k9": 9.4, "bb9": 2.5, "hr9": 0.8},
+        "Gray": {"whip": 1.21, "k9": 9.0, "bb9": 2.7, "hr9": 0.9},
     }
 
-    offense_stats = {
-        "Yankees": {"obp": 0.330, "k_rate": 0.235},
-        "Red Sox": {"obp": 0.320, "k_rate": 0.240},
-        "Dodgers": {"obp": 0.345, "k_rate": 0.210},
-        "Giants": {"obp": 0.315, "k_rate": 0.250},
-        "Braves": {"obp": 0.335, "k_rate": 0.225},
-        "Mets": {"obp": 0.310, "k_rate": 0.255},
-        "Astros": {"obp": 0.325, "k_rate": 0.230},
-        "Rangers": {"obp": 0.318, "k_rate": 0.245},
-        "Cubs": {"obp": 0.312, "k_rate": 0.252},
-        "Cardinals": {"obp": 0.321, "k_rate": 0.238},
+    # ----------------------------
+    # OFFENSIVE PRESSURE METRICS
+    # ----------------------------
+
+    offense_metrics = {
+        "Yankees": {"obp": 0.334, "k_rate": 0.238},
+        "Red Sox": {"obp": 0.321, "k_rate": 0.241},
+
+        "Dodgers": {"obp": 0.346, "k_rate": 0.212},
+        "Giants": {"obp": 0.314, "k_rate": 0.249},
+
+        "Braves": {"obp": 0.337, "k_rate": 0.227},
+        "Mets": {"obp": 0.312, "k_rate": 0.253},
+
+        "Astros": {"obp": 0.326, "k_rate": 0.231},
+        "Rangers": {"obp": 0.319, "k_rate": 0.246},
+
+        "Cubs": {"obp": 0.313, "k_rate": 0.251},
+        "Cardinals": {"obp": 0.322, "k_rate": 0.239},
     }
+
+    # ----------------------------
+    # PARK FACTORS
+    # ----------------------------
 
     park_factor = {
-        "Yankees": 1.03,
         "Red Sox": 1.05,
-        "Dodgers": 0.98,
         "Giants": 0.94,
-        "Braves": 1.01,
         "Mets": 0.97,
-        "Astros": 1.02,
         "Rangers": 1.08,
-        "Cubs": 1.00,
-        "Cardinals": 0.99,
+        "Cardinals": 0.99
     }
 
     # ----------------------------
@@ -69,56 +104,125 @@ def run():
     # ----------------------------
 
     def build_features(row):
-        away = row["away_team"]
-        home = row["home_team"]
 
-        p_away = pitcher_stats[away]
-        p_home = pitcher_stats[home]
+        away_pitch = pitcher_metrics[row["away_pitcher"]]
+        home_pitch = pitcher_metrics[row["home_pitcher"]]
 
-        o_away = offense_stats[away]
-        o_home = offense_stats[home]
+        away_off = offense_metrics[row["away_team"]]
+        home_off = offense_metrics[row["home_team"]]
+
+        park = park_factor.get(row["home_team"], 1.00)
 
         return pd.Series({
-            "pitching_whip": p_away["whip"] + p_home["whip"],
-            "pitching_k9": p_away["k9"] + p_home["k9"],
-            "pitching_bb9": p_away["bb9"] + p_home["bb9"],
-            "offense_obp": o_away["obp"] + o_home["obp"],
-            "offense_k": o_away["k_rate"] + o_home["k_rate"],
-            "park": park_factor[away] + park_factor[home]
+
+            "combined_whip":
+                away_pitch["whip"] + home_pitch["whip"],
+
+            "combined_k9":
+                away_pitch["k9"] + home_pitch["k9"],
+
+            "combined_bb9":
+                away_pitch["bb9"] + home_pitch["bb9"],
+
+            "combined_hr9":
+                away_pitch["hr9"] + home_pitch["hr9"],
+
+            "combined_obp":
+                away_off["obp"] + home_off["obp"],
+
+            "combined_k_rate":
+                away_off["k_rate"] + home_off["k_rate"],
+
+            "park_factor":
+                park
         })
 
     features = df.apply(build_features, axis=1)
+
     df = pd.concat([df, features], axis=1)
 
     # ----------------------------
-    # NRFI MODEL (B2 MULTI-FACTOR MODEL)
+    # ADVANCED NRFI MODEL
     # ----------------------------
 
     base = 0.52
 
     df["model1"] = (
         base
-        - (df["pitching_whip"] - 2.35) * 0.28
-        + (df["pitching_k9"] - 18) * 0.01
-        - (df["offense_obp"] - 0.64) * 0.85
-        + (df["offense_k"] - 0.48) * 0.60
-        - (df["park"] - 2.00) * 0.12
+
+        # WHIP suppression
+        - (df["combined_whip"] - 2.30) * 0.28
+
+        # strikeout upside
+        + (df["combined_k9"] - 18.0) * 0.012
+
+        # walk risk
+        - (df["combined_bb9"] - 5.2) * 0.020
+
+        # HR suppression
+        - (df["combined_hr9"] - 1.8) * 0.045
+
+        # offense pressure
+        - (df["combined_obp"] - 0.64) * 0.90
+
+        # offense strikeout tendencies
+        + (df["combined_k_rate"] - 0.48) * 0.65
+
+        # park environment
+        - (df["park_factor"] - 1.00) * 0.12
     )
 
-    df["model2"] = df["model1"] + 0.015
-    df["model3"] = df["model1"] - 0.010
+    # ensemble stabilization
+    df["model2"] = df["model1"] + 0.012
+    df["model3"] = df["model1"] - 0.009
 
-    df["avg_nrfi"] = df[["model1", "model2", "model3"]].mean(axis=1)
+    df["avg_nrfi"] = (
+        df[["model1", "model2", "model3"]]
+        .mean(axis=1)
+        .clip(0.01, 0.99)
+    )
 
     # ----------------------------
-    # OUTPUT
+    # BETTING TIERS
+    # ----------------------------
+
+    conditions = [
+        df["avg_nrfi"] >= 0.58,
+        df["avg_nrfi"] >= 0.54,
+    ]
+
+    labels = [
+        "🔥 STRONG NRFI",
+        "✅ LEAN NRFI"
+    ]
+
+    df["edge_tier"] = np.select(
+        conditions,
+        labels,
+        default="PASS"
+    )
+
+    # ----------------------------
+    # TIMESTAMP
     # ----------------------------
 
     df["timestamp"] = datetime.now().strftime("%Y-%m-%d %I:%M %p")
 
-    df.to_csv("data/predictions.csv", index=False)
+    # ----------------------------
+    # SAVE OUTPUT
+    # ----------------------------
 
-    print("B2 NRFI MODEL COMPLETE - MULTI FACTOR ACTIVE")
+    df = df.sort_values(
+        by="avg_nrfi",
+        ascending=False
+    )
+
+    df.to_csv(
+        "data/predictions.csv",
+        index=False
+    )
+
+    print("B3-B MODEL COMPLETE")
 
 if __name__ == "__main__":
     run()
